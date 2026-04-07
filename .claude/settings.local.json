@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Read(//c/Users/THUNDEROBOT/.claude/skills/dream-sylus/**)",
+      "Bash(rm -rf ~/.claude/skills/create-dream/)",
+      "Bash(cp -r \"D:/AB各种项目/bias-skill/\" ~/.claude/skills/create-dream/)",
+      "Bash(cp \"D:/AB各种项目/bias-skill/SKILL.md\" ~/.claude/skills/create-dream/SKILL.md)",
+      "Bash(cp \"D:/AB各种项目/bias-skill/prompts/action_modes.md\" ~/.claude/skills/create-dream/prompts/action_modes.md)",
+      "WebFetch(domain:namu.wiki)",
+      "WebFetch(domain:www.koreaboo.com)",
+      "WebFetch(domain:www.quora.com)",
+      "WebFetch(domain:ateezhq.quora.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:www.marieclaire.com.tw)",
+      "WebFetch(domain:www.zhihu.com)",
+      "WebFetch(domain:snugfam.com)",
+      "WebFetch(domain:atiny.fandom.com)",
+      "WebFetch(domain:aigift.alibaba.com)",
+      "WebFetch(domain:ateezhealingdol.carrd.co)",
+      "WebFetch(domain:www.kpopangel.com)",
+      "WebFetch(domain:kpopsingers.com)",
+      "WebFetch(domain:kstationtv.com)",
+      "WebFetch(domain:tadaland.net)",
+      "WebFetch(domain:atzfc.carrd.co)",
+      "WebFetch(domain:x.com)",
+      "WebFetch(domain:www.threads.com)",
+      "WebFetch(domain:m.cafe.daum.net)",
+      "WebFetch(domain:www.tumblr.com)",
+      "Bash(mkdir -p \"C:/Users/THUNDEROBOT/.claude/skills/create-dream/dreams/san/versions\")",
+      "Bash(mkdir -p \"C:/Users/THUNDEROBOT/.claude/skills/create-dream/dreams/san/sources\")",
+      "Bash(mkdir -p ~/.claude/skills/dream-san)",
+      "Bash(python3:*)",
+      "Bash(python:*)"
+    ]
+  }
+}

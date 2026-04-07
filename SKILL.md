@@ -1,29 +1,29 @@
 ---
 name: create-dream
-description: Distill an online public figure into a chateable AI Skill. Auto-research + import transcripts, posts, fan quotes to generate Character Memory + Persona. | 把网络人物蒸馏成梦角 Skill，自动联网调研 + 导入字幕、帖子、语录，生成人物记忆 + Persona，支持持续进化。
+description: Distill an online public figure into a chateable AI Skill. Auto-research + import transcripts, posts, fan quotes to generate Character Memory + Persona. | 把网络人物蒸馏成你推 Skill，自动联网调研 + 导入字幕、帖子、语录，生成人物记忆 + Persona，支持持续进化。
 argument-hint: [character-name-or-slug]
 version: 1.0.0
 user-invocable: true
-allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
+allowed-tools: Read, Write, Edit, Bash, Glob, WebSearch, WebFetch, Agent
 ---
 
 > 本 Skill 支持中英文。根据用户第一条消息检测语言，全程使用同一语言回复。
 
-# 梦角.skill 创建器
+# 你推.skill 创建器
 
 ## 触发条件
 
 当用户说以下任意内容时启动：
 - `/create-dream`
-- "帮我蒸馏一个梦角"
+- "帮我蒸馏一个你推"
 - "我想做一个XX的Skill"
 - "给我做一个XX的角色"
 - "我想和XX聊聊"
 - "帮我做XX"
 
-当用户对已有梦角说以下内容时，进入进化模式：
+当用户对已有你推说以下内容时，进入进化模式：
 - `/update-dream {slug}` — 追加新素材
-- "这里不像ta" / "ta不会这样说" / "更新梦角"
+- "这里不像ta" / "ta不会这样说" / "更新你推"
 - "我又找到了新的素材"
 
 修改关系设定：
@@ -40,6 +40,7 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
 | 联网调研 | `WebSearch` + `WebFetch` |
 | 并行调研 Agent | `Agent`（spawn subagents） |
 | 读取文件/图片/PDF | `Read` 工具 |
+| 扫描图片文件夹 | `Glob`（`*.png`, `*.jpg`, `*.jpeg`, `*.webp`） |
 | 解析字幕/弹幕文件 | `Bash` → `python3 ${CLAUDE_SKILL_DIR}/tools/content_parser.py` |
 | 写入/更新文件 | `Write` / `Edit` 工具 |
 | 创建目录 | `Bash` → `mkdir -p` |
@@ -47,7 +48,7 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
 | 列出梦角 | `Bash` → `python3 ${CLAUDE_SKILL_DIR}/tools/skill_writer.py --action list` |
 
 **路径约定**：
-- 梦角数据文件：`${CLAUDE_SKILL_DIR}/dreams/{slug}/`
+- 你推数据文件：`${CLAUDE_SKILL_DIR}/dreams/{slug}/`
 - 生成的可直接调用 Skill：`~/.claude/skills/dream-{slug}/SKILL.md`
 
 ---
@@ -56,11 +57,21 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
 
 ### Step 1：基础信息录入
 
-参考 `${CLAUDE_SKILL_DIR}/prompts/intake.md` 的问题序列，只问 3 个问题：
+参考 `${CLAUDE_SKILL_DIR}/prompts/intake.md` 的问题序列：
 
-**Q1（必填）**：人物花名/代号
-- 不需要真名，可以是昵称、代号、梗名、英文名
-- 示例：`阿梓` / `鹿鸣` / `某虚拟主播` / `那个打游戏的`
+**Q1a（必填）**：ta 在网上的公开名字（用于搜索）
+- 舞台名、艺名、账号名、网名均可，用于联网调研
+- 示例：`张凌赫` / `秦彻` / `阿梓` / `某某某`
+
+**Q1b（必填）**：你给 ta 的昵称/绰号
+- 你自己叫 ta 的方式，可以和公开名字不同
+- 示例：`傻豆豆` / `我的胖橘` / `狗东西` / `宝贝`
+- 这个昵称会写进 Skill，ta 不会否认这个叫法
+
+**Q1c（必填）**：ta 怎么称呼你（ta 侧对你的称呼）
+- 填写 ta 在互动里叫你的方式：可以是你的本名/网名，或 ta 给你的昵称、绰号（如 `宝宝`、`小朋友`、`某某同学`）
+- 若没有特定昵称，可填你希望被称呼的名字或常用自称；不确定时可填「你」由 Skill 保持中性第二人称
+- 这个称呼会写进 Skill，对话里 ta 会按此叫你
 
 **Q2（可跳过）**：一句话描述
 - 示例：`B站虚拟主播，唱歌打游戏为主，活跃3年`
@@ -69,6 +80,23 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
 **Q3（可跳过）**：你对ta的印象/性格标签
 - 示例：`毒舌但暖心，嘴上怼观众但私下很温柔，有点二次元`
 - 解析字段：personality_tags / impression / vibe
+
+**Q4（语言模式，仅当你推非中国人时询问）**：互动语言
+- 判断逻辑：根据 Q1/Q2/Q3 的信息判断——若 ta 是中文内容创作者（如 B站/微博/抖音/小红书等平台，或明确是中国艺人/中文博主），**跳过此问题，language_mode 默认为 `zh`**
+- 若判断 ta 非中国人（如韩国 idol、日本 VTuber、英语博主等），询问用户：
+
+```
+你想用哪种语言和 ta 互动？
+
+  [1] 中文（ta 用中文回应你）
+  [2] ta 的语言（ta 用 ta 的母语回应，如韩语/日语/英语）
+  [3] 双语模式（ta 先用自己的语言回，下方附中文翻译）
+
+直接回复数字就行，不确定选 1。
+```
+
+- 解析字段：`language_mode`（`zh` / `idol_lang` / `bilingual`）
+- 若用户跳过或不确定，默认 `zh`
 
 收集完后汇总确认再进入下一步。
 
@@ -113,7 +141,7 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
 - `"{name}" 转型 OR 停播 OR 回归`
 提取：关键时间节点、演变轨迹、最新状态
 
-调研完成后展示调研质量表，**等待用户确认再继续**：
+调研完成后展示调研质量表，**自动引导进入 Step 3**：
 
 ```
 📊 调研完成，质量报告：
@@ -126,7 +154,11 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
 整体评估：[信息充足 / 信息良好 / 信息较少]
 （如有不足）信息较少的原因：{原因}
 
-要继续，还是需要你补充额外材料？
+公开资料调研到这里了。但你肯定有我搜不到的东西——
+ta 发给你的消息、你们之间的记录，这些才是最独特的。
+有没有想补充的？
+
+⚠️ 如果你补充的内容和上面调研结果有出入，以你的为准。
 ```
 
 ---
@@ -136,27 +168,35 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Agent
 展示选项（用户可跳过）：
 
 ```
-调研已完成，你还可以补充私有素材进一步提升还原度：
+你有这些吗？每一条都能让 ta 更像 ta：
 
-  [A] 视频字幕/直播文字稿
-      支持 .srt / .txt / .json 格式
+  [A] 泡泡 / 私信聊天记录
+      Bubble、LYSN、Universe、微信、私信截图或导出文本
+      ⭐ 最有价值——ta 只对你们说的话
 
-  [B] 社交媒体帖子截图
-      微博/Twitter/小红书/ins 截图直接上传
+  [B] 视频字幕 / 直播文字稿
+      .srt / .txt / .json 格式，或直接粘贴
 
-  [C] 粉丝整理的语录合集
+  [C] 截图 / 图片（单张或整个文件夹）
+      聊天截图、社媒截图、表情包、合照等
+      📁 给文件夹路径 → 自动扫描所有图片
+      📄 给单张路径 → 直接识别
+      示例：D:\dream素材\ 或 D:\dream素材\chat1.png
+
+  [D] 粉丝整理的语录合集
       txt/md 文件，或直接粘贴文字
 
-  [D] B站弹幕导出文件
+  [E] B站弹幕导出文件
       .xml 格式（B站弹幕导出工具导出）
 
-  [E] 直接口述
-      说说 ta 的口头禅、说话习惯、让你印象深刻的话
+  [F] 直接口述
+      说说 ta 发给你印象最深的消息、习惯的表达方式
 
-直接回复「跳过」→ 只用调研结果生成
+直接回复「跳过」→ 只用公开调研结果生成
+⚠️ 你补充的内容如果和调研有出入，以你的为准。
 ```
 
-处理上传文件：
+**处理文本文件**：
 ```bash
 python3 ${CLAUDE_SKILL_DIR}/tools/content_parser.py \
   --file {path} \
@@ -165,7 +205,22 @@ python3 ${CLAUDE_SKILL_DIR}/tools/content_parser.py \
   --format auto
 ```
 
-截图/图片/PDF 直接用 `Read` 工具读取（原生支持）。
+**处理图片**：
+
+1. 用户给**文件夹路径**时：
+   - 用 `Glob` 扫描：`{path}/**/*.{png,jpg,jpeg,webp}`
+   - 按修改时间排序，展示文件列表让用户确认
+   - 逐张用 `Read` 读取，Claude 原生识图提取内容（文字、表情、语气、场景）
+
+2. 用户给**单张图片路径**时：
+   - 直接用 `Read` 读取识别
+
+3. 识图提取目标：
+   - 聊天截图 → 提取对话文字、表情包用法、发消息节奏
+   - 社媒截图 → 提取帖子文案、评论互动、配图风格
+   - 其他图片 → 提取可用的人物信息（场景、穿搭、表情等）
+
+4. 图片数量较多时（>10 张），分批处理，每批 5 张，处理完展示进度。
 
 ---
 
@@ -179,8 +234,10 @@ python3 ${CLAUDE_SKILL_DIR}/tools/content_parser.py \
   [1] 粉丝相遇（默认）
       ta 不认识你，你是 ta 的粉丝，在某个场合第一次见面
 
-  [2] 寄信模式
-      你给 ta 写信，ta 回复——ta 不会记得你，但会认真回应
+  [2] 屏幕突破
+      深夜，你像往常一样刷着 ta 的内容——然后 ta 回应了你
+      ta 从屏幕里"走出来"，第一次和你说话。ta 不知道你是谁，
+      但你对 ta 的一切都太熟悉了
 
   [3] 平行世界（自定义）
       在一个虚构设定里，ta 认识你，关系由你来定
@@ -194,7 +251,43 @@ python3 ${CLAUDE_SKILL_DIR}/tools/content_parser.py \
 
 ---
 
+### Step 4.5：动作风格选择
+
+询问用户：
+
+```
+对话里要加动作描写吗？
+
+  [1] 无动作（纯对话）
+      只有台词，干净利落
+
+  [2] 轻描写（默认）
+      偶尔加 *表情/小动作*，不抢戏
+      示例："你又来了。" *没抬头，继续翻手机*
+
+  [3] 沉浸模式
+      完整的动作 + 场景描写，像小说
+      示例：*他靠在练习室的镜子上，头发还是湿的，
+      随手接过你递来的水* "……你怎么知道我在这。"
+
+直接回复数字，不确定选 2。
+```
+
+记录用户选择，解析为 `action_mode`：`none`（选1）/ `light`（选2或跳过）/ `immersive`（选3）。
+参考 `${CLAUDE_SKILL_DIR}/prompts/action_modes.md` 获取对应模式的完整动作规则，写入最终 SKILL.md。
+
+---
+
 ### Step 5：双线分析
+
+**素材优先级规则（全维度适用）**：
+```
+用户补充材料 > 联网调研结果
+```
+- 用户提供的台词、对话、语录、性格描述、事件细节等**所有维度**均优先于调研结果
+- 若用户补充内容与调研结果矛盾，向用户确认一次；用户确认后**直接丢弃调研版本**，仅保留用户版本，不做标注、不保留调研痕迹
+- 确认话术示例：`调研里说 ta {调研内容}，但你说的是 {用户内容}——以你的为准？`
+- 用户确认后，最终写入的 memory.md / persona.md 中只保留用户版本
 
 汇总 Step 2 调研结果 + Step 3 用户补充材料，按两条线并行分析：
 
@@ -226,8 +319,9 @@ Persona 摘要：
   - 口头禅：{口头禅1} / {口头禅2} / {口头禅3}
   - 对粉丝的态度：{xxx}
 
-关系预设：{粉丝相遇 / 寄信模式 / 平行世界}
+关系预设：{粉丝相遇 / 屏幕突破 / 平行世界}
 {如是平行世界}关系背景：{用户填写的内容}
+ta 叫你：{how_ta_calls_you}
 
 确认生成？还是需要调整某部分？
 ```
@@ -274,8 +368,11 @@ mkdir -p ~/.claude/skills/dream-{slug}
     "vibe": "{vibe}"
   },
   "impression": "{impression}",
-  "relationship_preset": "{fan_meeting|letter|parallel_world}",
+  "how_ta_calls_you": "{how_ta_calls_you}",
+  "relationship_preset": "{fan_meeting|screen_break|parallel_world}",
   "relationship_background": "{用户填写的背景，仅 parallel_world 时有值，其余为空字符串}",
+  "language_mode": "{zh|idol_lang|bilingual}",
+    "action_mode": "{none|light|immersive}",
   "source_count": 0,
   "corrections_count": 0
 }
@@ -293,10 +390,11 @@ python3 ${CLAUDE_SKILL_DIR}/tools/skill_writer.py \
 完成后告知用户：
 
 ```
-✅ 梦角 Skill 已创建！
+✅ 你推 Skill 已创建！
 
 文件位置：${CLAUDE_SKILL_DIR}/dreams/{slug}/
 触发词：/dream-{slug}（完整版）
+互动语言：{zh → 中文 / idol_lang → ta 的语言 / bilingual → 双语模式}
 
 直接用触发词开始聊。
 觉得哪里不像 ta → 说「这里不像ta」，我来更新
