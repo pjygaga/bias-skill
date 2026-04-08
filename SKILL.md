@@ -26,8 +26,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, WebSearch, WebFetch, Agent
 - "这里不像ta" / "ta不会这样说" / "更新你推"
 - "我又找到了新的素材"
 
-修改关系设定：
-- "修改关系背景" / "改关系设定" / `/dream-relation {slug}`
+修改设定（关系/世界观/称呼等）：
+- "改设定" / "修改关系" / "改世界观" / "改称呼" / `/dream-setting {slug}`
 
 当用户说 `/list-dreams` 时列出所有已生成的梦角。
 
@@ -278,6 +278,34 @@ python3 ${CLAUDE_SKILL_DIR}/tools/content_parser.py \
 
 ---
 
+### Step 4.6：关系走向选择
+
+询问用户：
+
+```
+聊天里关系怎么发展？
+
+  [1] 自然推进（默认）
+      关系随对话自然发展——从初识到熟络到交心
+      不靠刷轮数，靠对话质量推进，说错话也会倒退
+
+  [2] 保持现状
+      关系始终停在起点，不升温不降温
+      适合只想和 ta 聊天、不需要关系线的情况
+
+  [3] 恨海情天
+      靠近又推开，误解与和好交替
+      ta 心里有你但嘴上不说，推开你又忍不住回头
+      甜三分虐五分暖两分
+
+直接回复数字，不确定选 1。
+```
+
+记录用户选择，解析为 `relationship_progression`：`progression`（选1或跳过）/ `static`（选2）/ `angst`（选3）。
+参考 `${CLAUDE_SKILL_DIR}/prompts/relationship_stages.md` 获取对应模式的完整规则，写入最终 SKILL.md。
+
+---
+
 ### Step 5：双线分析
 
 **素材优先级规则（全维度适用）**：
@@ -321,6 +349,7 @@ Persona 摘要：
 
 关系预设：{粉丝相遇 / 屏幕突破 / 平行世界}
 {如是平行世界}关系背景：{用户填写的内容}
+关系走向：{自然推进 / 保持现状 / 恨海情天}
 ta 叫你：{how_ta_calls_you}
 
 确认生成？还是需要调整某部分？
@@ -368,11 +397,13 @@ mkdir -p ~/.claude/skills/dream-{slug}
     "vibe": "{vibe}"
   },
   "impression": "{impression}",
+  "nickname": "{用户给ta的昵称}",
   "how_ta_calls_you": "{how_ta_calls_you}",
   "relationship_preset": "{fan_meeting|screen_break|parallel_world}",
   "relationship_background": "{用户填写的背景，仅 parallel_world 时有值，其余为空字符串}",
   "language_mode": "{zh|idol_lang|bilingual}",
     "action_mode": "{none|light|immersive}",
+    "relationship_progression": "{progression|static|angst}",
   "source_count": 0,
   "corrections_count": 0
 }
@@ -393,12 +424,24 @@ python3 ${CLAUDE_SKILL_DIR}/tools/skill_writer.py \
 ✅ 你推 Skill 已创建！
 
 文件位置：${CLAUDE_SKILL_DIR}/dreams/{slug}/
-触发词：/dream-{slug}（完整版）
-互动语言：{zh → 中文 / idol_lang → ta 的语言 / bilingual → 双语模式}
+Skill 位置：~/.claude/skills/dream-{slug}/SKILL.md
+触发词：/dream-{slug}
 
 直接用触发词开始聊。
+
+🔧 想改设定？两种方式：
+  方式 1（对话改）：跟我说「改设定」，我帮你改
+  方式 2（手动改）：直接编辑 SKILL.md，找 ✏️ 标记的区域
+
+可改的东西：
+  · 称呼（你叫ta / ta叫你）
+  · 关系背景（粉丝相遇 / 平行世界 / 自定义）
+  · 关系走向（自然推进 / 保持现状 / 恨海情天）
+  · 世界观与场景
+  · 动作模式（无 / 轻 / 沉浸）
+  · 语言模式（中文 / 外语 / 双语）
+
 觉得哪里不像 ta → 说「这里不像ta」，我来更新
-想改关系设定 → 说「修改关系背景」，我来改接口
 ```
 
 ---
@@ -434,15 +477,31 @@ python3 ${CLAUDE_SKILL_DIR}/tools/skill_writer.py \
 
 ---
 
-## 修改关系背景
+## 修改设定
 
-用户说「修改关系背景」/ 「改关系设定」时：
+用户说「改设定」/「修改关系」/「改世界观」/「改称呼」/「改语言」/「改动作模式」等时：
 
-1. `Read` 当前 `~/.claude/skills/dream-{slug}/SKILL.md`
-2. 找到 `## 关系背景` 节（两个 `<!-- ✏️ -->` 注释之间）
-3. 询问用户新的背景描述
-4. 用 `Edit` **只更新**这一节的内容，不动其他部分
-5. 同步更新 `${CLAUDE_SKILL_DIR}/dreams/{slug}/meta.json` 的 `relationship_background`
+**通用流程**：
+
+1. 确定目标梦角 slug（如只有一个则自动选中，多个则询问）
+2. `Read` 当前 `~/.claude/skills/dream-{slug}/SKILL.md`
+3. 根据用户意图，定位到对应的 `<!-- ✏️ -->` 可修改区域
+4. 询问用户新的内容
+5. 用 `Edit` **只更新**对应区域，不动其他部分
+6. 同步更新 `${CLAUDE_SKILL_DIR}/dreams/{slug}/meta.json` 的对应字段
+
+**可修改区域对照表**：
+
+| 用户说 | SKILL.md 区域 | meta.json 字段 |
+|--------|--------------|----------------|
+| 改称呼 / ta叫我XX / 我叫ta XX | `## 快捷设定` 表格 | `nickname` / `how_ta_calls_you` |
+| 改动作模式 / 不要动作 / 加动作 | `## 快捷设定` 表格 | `action_mode` |
+| 改语言 / 用中文 / 用韩语 / 双语 | `## 快捷设定` 表格 | `language_mode` |
+| 改关系 / 修改关系背景 | `## 关系背景` | `relationship_preset` / `relationship_background` |
+| 改走向 / 我要恨海情天 / 自然推进 | `## 关系走向` | `relationship_progression` |
+| 改世界观 / 加场景设定 / 改背景 | `## 世界观与场景` | —（仅在 SKILL.md 中） |
+
+**提示**：生成的 SKILL.md 里所有可修改区域都用 `<!-- ✏️ -->` 标记包围，用户也可以直接打开文件手动编辑
 
 ---
 

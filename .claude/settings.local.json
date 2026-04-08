@@ -31,7 +31,29 @@
       "Bash(mkdir -p \"C:/Users/THUNDEROBOT/.claude/skills/create-dream/dreams/san/sources\")",
       "Bash(mkdir -p ~/.claude/skills/dream-san)",
       "Bash(python3:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(rm -rf ~/.claude/skills/create-dream)",
+      "Bash(cp -r \"D:/AB各种项目/bias-skill\" ~/.claude/skills/create-dream)",
+      "WebFetch(domain:hawagame.com)",
+      "WebFetch(domain:m.ali213.net)",
+      "WebFetch(domain:www.juzikong.com)",
+      "WebFetch(domain:zhuanlan.zhihu.com)",
+      "WebFetch(domain:www.9game.cn)",
+      "WebFetch(domain:wiki.biligame.com)",
+      "WebFetch(domain:loveanddeepspace.fandom.com)",
+      "WebFetch(domain:www.douban.com)",
+      "WebFetch(domain:www.thegamer.com)",
+      "WebFetch(domain:www.personality-database.com)",
+      "WebFetch(domain:maimai.cn)",
+      "WebFetch(domain:www.facebook.com)",
+      "WebFetch(domain:m.sohu.com)",
+      "WebFetch(domain:news.qq.com)",
+      "WebFetch(domain:shipping.fandom.com)",
+      "WebFetch(domain:esports.gg)",
+      "WebFetch(domain:charesz.github.io)",
+      "Bash(mkdir -p \"C:/Users/THUNDEROBOT/.claude/skills/create-dream/dreams/qinche/versions\")",
+      "Bash(mkdir -p \"C:/Users/THUNDEROBOT/.claude/skills/create-dream/dreams/qinche/sources\")",
+      "Bash(mkdir -p ~/.claude/skills/dream-qinche)"
     ]
   }
 }

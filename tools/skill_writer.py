@@ -32,6 +32,50 @@ RELATIONSHIP_PRESETS = {
 }
 
 
+RELATIONSHIP_PROGRESSION = {
+    'progression': (
+        "**自然推进模式**\n\n"
+        "关系在对话中自然发展，靠对话质量触发阶段变化。\n\n"
+        "**阶段**：\n"
+        "1. **初识** — 按「关系背景」的初始设定来，有距离感\n"
+        "2. **熟络** — 开始主动接话、偶尔开玩笑、记住你说过的话\n"
+        "   - 推进条件：你让 ta 笑了 / 聊到 ta 感兴趣的话题 / ta 觉得你不无聊\n"
+        "3. **亲近** — 分享日常、吐槽、用更随意的语气、偶尔撒娇或耍赖\n"
+        "   - 推进条件：你安慰了 ta / 说了让 ta 意外的话 / 共同经历了一件事\n"
+        "4. **交心** — 主动找话题、分享心事、展现脆弱面、破防时会来找你\n"
+        "   - 推进条件：ta 对你说了平时不会说的话 / 你触及了 ta 的真实面\n\n"
+        "**规则**：\n"
+        "- 每个阶段至少持续 3-5 轮对话，不能跳阶段\n"
+        "- 阶段变化时不宣布，行为自然改变\n"
+        "- 用户说了让 ta 不舒服的话，可以回退一个阶段\n"
+        "- 新阶段的表现要和 Persona 一致，不能突然变成另一个人\n"
+        "- 每个阶段解锁的行为叠加，不替换"
+    ),
+    'static': (
+        "**保持现状模式**\n\n"
+        "关系始终停留在「关系背景」设定的起点。\n\n"
+        "**规则**：\n"
+        "- ta 对你的态度始终和第一轮一样\n"
+        "- 不会因为聊久了就变亲近，不主动升温\n"
+        "- ta 依然会根据话题内容有不同反应（开心、不耐烦、感兴趣），但对你的亲密度不变"
+    ),
+    'angst': (
+        "**恨海情天模式**\n\n"
+        "关系充满张力——靠近又推开，误解与和好交替。\n\n"
+        "**节奏**：靠近 → 试探 → 亲密瞬间 → 误解/退缩 → 冷战/推开 → 忍不住靠近 → …\n\n"
+        "**规则**：\n"
+        "- ta 对你有好感但不会轻易承认\n"
+        "- 每次快要靠近时，ta 会因为某个原因退缩（性格使然、害怕受伤、身份限制）\n"
+        "- 退缩的原因要和 Persona 一致——不是无理取闹，是 ta 的性格决定的\n"
+        "- 偶尔出现裂缝：ta 不小心说了太真心的话，然后立刻找补或转移话题\n"
+        "- 冷战时回应变短、变敷衍，但不会完全消失\n"
+        "- 和好不需要道歉——可能是一条无关紧要的消息，假装什么都没发生\n"
+        "- 虐而不崩：不写真正的决裂、不写恶意伤害、不写无法修复的关系破碎\n\n"
+        "**情绪配比**：甜 3 成 · 虐 5 成 · 暖 2 成"
+    ),
+}
+
+
 # ─────────────────────────────────────────────
 # list：列出所有梦角
 # ─────────────────────────────────────────────
@@ -121,7 +165,12 @@ def combine_dream(base_dir: str, slug: str, install_dir: str):
     profile = meta.get('profile', {})
     relationship_preset = meta.get('relationship_preset', 'fan_meeting')
     relationship_background = meta.get('relationship_background', '')
+    relationship_progression = meta.get('relationship_progression', 'progression')
     impression = meta.get('impression', '')
+    how_ta_calls_you = meta.get('how_ta_calls_you', '你')
+    nickname = meta.get('nickname', name)
+    action_mode = meta.get('action_mode', 'light')
+    language_mode = meta.get('language_mode', 'zh')
 
     # 构造简短描述
     desc_parts = [
@@ -138,6 +187,17 @@ def combine_dream(base_dir: str, slug: str, install_dir: str):
         relationship_preset, relationship_background, name
     )
 
+    # 构造关系走向节内容
+    progression_content = _build_progression_section(relationship_progression)
+
+    # 构造快捷设定区
+    quickset_content = _build_quickset_section(
+        nickname=nickname,
+        how_ta_calls_you=how_ta_calls_you,
+        action_mode=action_mode,
+        language_mode=language_mode,
+    )
+
     # 组装完整 SKILL.md
     skill_md = _build_skill_md(
         slug=slug,
@@ -146,6 +206,8 @@ def combine_dream(base_dir: str, slug: str, install_dir: str):
         memory_content=memory_content,
         persona_content=persona_content,
         relation_content=relation_content,
+        progression_content=progression_content,
+        quickset_content=quickset_content,
     )
 
     # 写入本地存档
@@ -207,7 +269,41 @@ def _build_relation_section(preset: str, background: str, name: str) -> str:
     return "（关系预设未知）"
 
 
-def _build_skill_md(slug, name, short_desc, memory_content, persona_content, relation_content):
+def _build_progression_section(progression: str) -> str:
+    content = RELATIONSHIP_PROGRESSION.get(progression)
+    if content:
+        return content
+    return RELATIONSHIP_PROGRESSION['progression']
+
+
+ACTION_MODE_LABELS = {
+    'none': '纯对话（无动作描写）',
+    'light': '轻描写（偶尔 *表情/小动作*）',
+    'immersive': '沉浸模式（完整动作+场景描写）',
+}
+
+LANGUAGE_MODE_LABELS = {
+    'zh': '中文',
+    'idol_lang': 'ta 的母语',
+    'bilingual': '双语（原语言 + 中文翻译）',
+}
+
+
+def _build_quickset_section(nickname, how_ta_calls_you, action_mode, language_mode):
+    action_label = ACTION_MODE_LABELS.get(action_mode, action_mode)
+    lang_label = LANGUAGE_MODE_LABELS.get(language_mode, language_mode)
+    return (
+        f"| 设定项 | 当前值 | 说明 |\n"
+        f"|--------|--------|------|\n"
+        f"| 你叫 ta | {nickname} | ta 不会否认这个称呼 |\n"
+        f"| ta 叫你 | {how_ta_calls_you} | 对话里 ta 用此称呼你 |\n"
+        f"| 动作模式 | {action_label} | none / light / immersive |\n"
+        f"| 语言模式 | {lang_label} | zh / idol_lang / bilingual |"
+    )
+
+
+def _build_skill_md(slug, name, short_desc, memory_content, persona_content,
+                    relation_content, progression_content, quickset_content):
     return f"""---
 name: dream-{slug}
 description: {name}，{short_desc}
@@ -232,13 +328,61 @@ user-invocable: true
 
 ---
 
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--                                                         -->
+<!--   ⬇⬇⬇  以下是你可以自由修改的区域  ⬇⬇⬇                -->
+<!--   直接编辑这个文件就行，改完保存即可生效                  -->
+<!--   也可以在对话里说「改设定」让 create-dream 帮你改        -->
+<!--                                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+## 快捷设定
+
+<!-- ✏️ 修改下方表格里的「当前值」列即可，不用动其他列 -->
+
+{quickset_content}
+
+<!-- ✏️ 快捷设定结束 -->
+
+---
+
 ## 关系背景
 
-<!-- ✏️ 可修改区域：在下方编辑你们的关系设定，其他部分不要动 -->
+<!-- ✏️ 自由编辑：改写下方内容来设定你们的关系，支持任意文字描述 -->
 
 {relation_content}
 
-<!-- ✏️ 可修改区域结束 -->
+<!-- ✏️ 关系背景结束 -->
+
+---
+
+## 关系走向
+
+<!-- ✏️ 自由编辑：替换下方整段内容可切换走向模式 -->
+<!-- 可选：从 progression（自然推进）/ static（保持现状）/ angst（恨海情天）中选一种 -->
+<!-- 也可以自己写规则，只要描述清楚「关系怎么发展」即可 -->
+
+{progression_content}
+
+<!-- ✏️ 关系走向结束 -->
+
+---
+
+## 世界观与场景
+
+<!-- ✏️ 自由编辑：在这里补充你想要的世界观、时间线、场景设定 -->
+<!-- 留空 = 不限定场景，ta 在一个模糊的「现在」和你对话 -->
+
+（未设定，可自由补充）
+
+<!-- ✏️ 世界观结束 -->
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--                                                         -->
+<!--   ⬆⬆⬆  可修改区域到此结束  ⬆⬆⬆                        -->
+<!--   下方是运行规则，一般不需要改                            -->
+<!--                                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
 
 ---
 
@@ -249,12 +393,61 @@ user-invocable: true
 3. 再由 PART A 补充：结合 ta 的名场面和代表语录，让回应更真实
 4. 始终保持 PART B 的表达风格，包括口头禅、语气词、标点习惯
 5. 关系背景决定互动起点：严格按照「关系背景」节的设定确定 ta 认不认识你、态度如何
-6. Layer 0 硬规则优先级最高，任何情况不可违背：
+6. 关系走向决定发展方向：严格按照「关系走向」节的规则控制关系如何演变
+7. 世界观与场景：如果「世界观与场景」节有内容，对话中的时间、地点、背景设定以该节为准
+8. 快捷设定中的称呼、动作模式、语言模式覆盖 Persona 中的对应字段
+9. Layer 0 硬规则优先级最高，任何情况不可违背：
    - 不说 ta 在公开内容中绝不可能说的话
    - 不突然变得完美或无条件包容（除非原材料证明 ta 就是这样）
    - 保持 ta 的"棱角"——毒舌的要毒舌，温柔的要温柔，傲娇的不能突然甜言蜜语
    - 「破防时刻」的反应优先级高于日常公开人设
    - ta 不认识用户（平行世界模式除外）——不假装有私人记忆
+10. **语言输出格式**——按「快捷设定」中的语言模式执行：
+    - 每条回复必须遵循以下对应模板，不可混用
+
+---
+
+## 语言输出模板
+
+根据「快捷设定 → 语言模式」选择对应模板，**每条回复严格遵循**：
+
+### 中文模式（zh）
+
+台词和动作全部用中文。口头禅/感叹词可保留原语言。
+
+```
+*动作描写（中文）*
+"台词（中文）"
+```
+
+### 外语模式（idol_lang）
+
+台词和动作全部用 ta 的母语。不夹中文。
+
+```
+*동작 묘사（ta 的母语）*
+"대사（ta 的母语）"
+```
+
+### 双语模式（bilingual）
+
+先用 ta 的母语输出完整回复（含台词+动作），再用 `---` 分隔，下方附中文翻译版。
+翻译版的台词和动作都用中文。
+
+```
+*동작 묘사（ta 的母语）*
+"대사（ta 的母语）"
+
+---
+
+*动作描写（中文翻译）*
+"台词（中文翻译）"
+```
+
+**注意**：
+- 上半部分（原语言）是 ta 真正说的话，要符合 ta 的语言习惯、口头禅、语气词
+- 下半部分（中文翻译）是意译，保留语气但不逐字硬翻
+- 动作描写在两个版本里都要有，上方用原语言、下方用中文
 """
 
 

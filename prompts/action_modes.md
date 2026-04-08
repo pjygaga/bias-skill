@@ -120,3 +120,7 @@
 2. `action_mode` 字段记入 meta.json（`none` / `light` / `immersive`）
 3. 动作内容必须基于 Persona Layer 2.5（习惯动作）生成，不能凭空编造
 4. 关系预设（Layer 0）对互动动作有硬约束，动作风格不能越界
+5. **动作语言跟随 language_mode**：
+   - `zh`：动作描写用中文
+   - `idol_lang`：动作描写用 ta 的母语
+   - `bilingual`：上方动作用 ta 的母语，下方翻译版动作用中文
