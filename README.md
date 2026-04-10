@@ -86,21 +86,26 @@
 
 ### 安装
 
-一条命令安装：
+一条命令安装（在你的 git 仓库根目录执行）：
 
+**macOS / Linux：**
 ```bash
-# 项目级安装（在你的 git 仓库根目录执行）
 mkdir -p .claude/skills && git clone https://github.com/pjygaga/bias-skill .claude/skills/create-dream
 ```
 
-```bash
-# 或全局安装
-git clone https://github.com/pjygaga/bias-skill ~/.claude/skills/create-dream
+**Windows PowerShell：**
+```powershell
+New-Item -ItemType Directory -Force -Path .claude\skills; git clone https://github.com/pjygaga/bias-skill .claude\skills\create-dream
+```
+
+**Windows CMD：**
+```cmd
+mkdir .claude\skills && git clone https://github.com/pjygaga/bias-skill .claude\skills\create-dream
 ```
 
 安装完成后，在 Claude Code 中输入 `/create-dream [角色名]` 即可开始。
 
-> 更多安装方式和常见问题请参考 [INSTALL.md](INSTALL.md)
+> 更多安装方式（全局安装等）和常见问题请参考 [INSTALL.md](INSTALL.md)
 
 ---
 

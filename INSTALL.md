@@ -4,20 +4,50 @@
 
 > **重要**：Claude Code 从 **git 仓库根目录** 的 `.claude/skills/` 查找 skill。请在正确的位置执行。
 
+---
+
 ### 项目级安装（推荐）
 
 在你的 git 仓库根目录执行：
+
+#### macOS / Linux（Terminal）
 
 ```bash
 mkdir -p .claude/skills
 git clone https://github.com/pjygaga/bias-skill .claude/skills/create-dream
 ```
 
+#### Windows PowerShell
+
+```powershell
+New-Item -ItemType Directory -Force -Path .claude\skills
+git clone https://github.com/pjygaga/bias-skill .claude\skills\create-dream
+```
+
+#### Windows CMD
+
+```cmd
+mkdir .claude\skills
+git clone https://github.com/pjygaga/bias-skill .claude\skills\create-dream
+```
+
+---
+
 ### 全局安装
+
+#### macOS / Linux
 
 ```bash
 git clone https://github.com/pjygaga/bias-skill ~/.claude/skills/create-dream
 ```
+
+#### Windows PowerShell / CMD
+
+```powershell
+git clone https://github.com/pjygaga/bias-skill %USERPROFILE%\.claude\skills\create-dream
+```
+
+---
 
 安装完成后，在 Claude Code 中输入 `/create-dream [角色名]` 即可开始使用。
 
@@ -29,6 +59,8 @@ git clone https://github.com/pjygaga/bias-skill ~/.claude/skills/create-dream
 cd .claude/skills/create-dream  # 或你的安装路径
 pip3 install -r requirements.txt
 ```
+
+> Windows 用户如果 `pip3` 无法识别，请使用 `pip install -r requirements.txt`
 
 目前依赖项：
 - `chardet` — 字幕/文本文件编码检测
