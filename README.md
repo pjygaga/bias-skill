@@ -88,13 +88,21 @@
 
 ### 安装
 
-将本项目克隆到本地后，在 Claude Code 中作为 Skill 目录加载即可：
+一条命令安装：
 
 ```bash
-git clone https://github.com/pjygaga/bias-skill.git
+# 项目级安装（在你的 git 仓库根目录执行）
+mkdir -p .claude/skills && git clone https://github.com/pjygaga/bias-skill .claude/skills/create-dream
 ```
 
-将 Skill 路径添加到 Claude Code 的 skills 配置中，或直接在项目目录下使用。
+```bash
+# 或全局安装
+git clone https://github.com/pjygaga/bias-skill ~/.claude/skills/create-dream
+```
+
+安装完成后，在 Claude Code 中输入 `/create-dream [角色名]` 即可开始。
+
+> 更多安装方式和常见问题请参考 [INSTALL.md](INSTALL.md)
 
 ---
 
